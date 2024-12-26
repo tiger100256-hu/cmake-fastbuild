@@ -49,6 +49,7 @@
 #include "cmTargetLinkLibraryType.h"
 #include "cmTargetPropertyComputer.h"
 #include "cmake.h"
+#include <iostream>
 
 class cmMessenger;
 
@@ -4877,6 +4878,7 @@ std::string cmGeneratorTarget::NormalGetFullPath(
   bool realname) const
 {
   std::string fpath = cmStrCat(this->GetDirectory(config, artifact), '/');
+  std::cout << "===1fpath" << fpath << std::endl;
   if (this->IsAppBundleOnApple()) {
     fpath =
       cmStrCat(this->BuildBundleDirectory(fpath, config, FullLevel), '/');
@@ -4896,6 +4898,8 @@ std::string cmGeneratorTarget::NormalGetFullPath(
       fpath += this->GetFullName(config, cmStateEnums::ImportLibraryArtifact);
       break;
   }
+
+  std::cout << "===2fpath" << fpath << std::endl;
   return fpath;
 }
 
@@ -6667,15 +6671,20 @@ cmGeneratorTarget::OutputInfo const* cmGeneratorTarget::GetOutputInfo(
     OutputInfo info;
     OutputInfoMapType::value_type entry(config_upper, info);
     i = this->OutputInfoMap.insert(entry).first;
+    std::cout << "info.OutDir1:" <<  info.OutDir << std::endl;
 
     // Compute output directories.
     this->ComputeOutputDir(config, cmStateEnums::RuntimeBinaryArtifact,
                            info.OutDir);
     this->ComputeOutputDir(config, cmStateEnums::ImportLibraryArtifact,
                            info.ImpDir);
+    std::cout << "info.OutDir4:" <<  info.OutDir << std::endl;
     if (!this->ComputePDBOutputDir("PDB", config, info.PdbDir)) {
+      std::cout << "info.OutDir3:" <<  info.OutDir << std::endl;
       info.PdbDir = info.OutDir;
     }
+
+    std::cout << "info.OutDir2:" <<  info.OutDir << std::endl;
 
     // Now update the previously-prepared map entry.
     i->second = info;
@@ -6718,6 +6727,7 @@ bool cmGeneratorTarget::ComputeOutputDir(const std::string& config,
     // Use the user-specified per-configuration output directory.
     out = cmGeneratorExpression::Evaluate(*config_outdir, this->LocalGenerator,
                                           config, this);
+    std::cout << "out1" << out << std::endl;
 
     // Skip per-configuration subdirectory.
     conf.clear();
@@ -6725,6 +6735,8 @@ bool cmGeneratorTarget::ComputeOutputDir(const std::string& config,
     // Use the user-specified output directory.
     out = cmGeneratorExpression::Evaluate(*outdir, this->LocalGenerator,
                                           config, this);
+    std::cout << "out2" << out << std::endl;
+    std::cout << "outdir2" << *outdir << std::endl;
     // Skip per-configuration subdirectory if the value contained a
     // generator expression.
     if (out != *outdir) {
@@ -6733,6 +6745,7 @@ bool cmGeneratorTarget::ComputeOutputDir(const std::string& config,
   } else if (this->GetType() == cmStateEnums::EXECUTABLE) {
     // Lookup the output path for executables.
     out = this->Makefile->GetSafeDefinition("EXECUTABLE_OUTPUT_PATH");
+    std::cout << "out3" << out << std::endl;
   } else if (this->GetType() == cmStateEnums::STATIC_LIBRARY ||
              this->GetType() == cmStateEnums::SHARED_LIBRARY ||
              this->GetType() == cmStateEnums::MODULE_LIBRARY) {

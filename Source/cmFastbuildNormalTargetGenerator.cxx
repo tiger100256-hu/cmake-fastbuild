@@ -14,6 +14,8 @@
 #include "cmSourceFile.h"
 #include "cmState.h"
 #include "cmStateDirectory.h"
+#include <regex>
+#include <iostream>
 
 namespace {
 struct Objects
@@ -739,55 +741,55 @@ cmFastbuildNormalTargetGenerator::GenerateObjects()
     std::string compilerId = "Compiler_" + language;
 
     // Maybe insert an include-what-you-use runner.
-    if (!compileCmds.empty() && (language == "C" || language == "CXX")) {
-      std::string const iwyu_prop = language + "_INCLUDE_WHAT_YOU_USE";
-      auto iwyu = this->GeneratorTarget->GetProperty(iwyu_prop);
-      std::string const tidy_prop = language + "_CLANG_TIDY";
-      auto tidy = this->GeneratorTarget->GetProperty(tidy_prop);
-      std::string const cpplint_prop = language + "_CPPLINT";
-      auto cpplint = this->GeneratorTarget->GetProperty(cpplint_prop);
-      std::string const cppcheck_prop = language + "_CPPCHECK";
-      auto cppcheck = this->GeneratorTarget->GetProperty(cppcheck_prop);
-      if (iwyu || tidy || cpplint || cppcheck) {
-        std::string const cmakeCmd =
-          this->GetLocalGenerator()->ConvertToOutputFormat(
-            cmSystemTools::GetCMakeCommand(), cmLocalGenerator::SHELL);
-        std::string run_iwyu = cmStrCat(cmakeCmd, " -E __run_co_compile");
-        if (!compilerLauncher.empty()) {
-          // In __run_co_compile case the launcher command is supplied
-          // via --launcher=<maybe-list> and consumed
-          run_iwyu += " --launcher=";
-          run_iwyu +=
-            this->GetLocalGenerator()->EscapeForShell(compilerLauncher);
-          compilerLauncher.clear();
-        } else {
-          compilerId = this->GetGlobalGenerator()->AddLauncher(
-            cmSystemTools::GetCMakeCommand(), language, Makefile);
-        }
-        if (iwyu) {
-          run_iwyu += " --iwyu=";
-          run_iwyu += this->GetLocalGenerator()->EscapeForShell(*iwyu);
-        }
-        if (tidy) {
-          run_iwyu += " --tidy=";
-          run_iwyu += this->GetLocalGenerator()->EscapeForShell(*tidy);
-        }
-        if (cpplint) {
-          run_iwyu += " --cpplint=";
-          run_iwyu += this->GetLocalGenerator()->EscapeForShell(*cpplint);
-        }
-        if (cppcheck) {
-          run_iwyu += " --cppcheck=";
-          run_iwyu += this->GetLocalGenerator()->EscapeForShell(*cppcheck);
-        }
-        if (tidy || cpplint || cppcheck) {
-          run_iwyu += " --source=" FASTBUILD_DOLLAR_TAG
-                      "FB_INPUT_1_PLACEHOLDER" FASTBUILD_DOLLAR_TAG;
-        }
-        run_iwyu += " -- ";
-        compileCmds.front().insert(0, run_iwyu);
-      }
-    }
+    //if (!compileCmds.empty() && (language == "C" || language == "CXX")) {
+    //  std::string const iwyu_prop = language + "_INCLUDE_WHAT_YOU_USE";
+    //  auto iwyu = this->GeneratorTarget->GetProperty(iwyu_prop);
+    //  std::string const tidy_prop = language + "_CLANG_TIDY";
+    //  auto tidy = this->GeneratorTarget->GetProperty(tidy_prop);
+    //  std::string const cpplint_prop = language + "_CPPLINT";
+    //  auto cpplint = this->GeneratorTarget->GetProperty(cpplint_prop);
+    //  std::string const cppcheck_prop = language + "_CPPCHECK";
+    //  auto cppcheck = this->GeneratorTarget->GetProperty(cppcheck_prop);
+    //  if (iwyu || tidy || cpplint || cppcheck) {
+    //    std::string const cmakeCmd =
+    //      this->GetLocalGenerator()->ConvertToOutputFormat(
+    //        cmSystemTools::GetCMakeCommand(), cmLocalGenerator::SHELL);
+    //    std::string run_iwyu = cmStrCat(cmakeCmd, " -E __run_co_compile");
+    //    if (!compilerLauncher.empty()) {
+    //      // In __run_co_compile case the launcher command is supplied
+    //      // via --launcher=<maybe-list> and consumed
+    //      run_iwyu += " --launcher=";
+    //      run_iwyu +=
+    //        this->GetLocalGenerator()->EscapeForShell(compilerLauncher);
+    //      compilerLauncher.clear();
+    //    } else {
+    //      compilerId = this->GetGlobalGenerator()->AddLauncher(
+    //        cmSystemTools::GetCMakeCommand(), language, Makefile);
+    //    }
+    //    if (iwyu) {
+    //      run_iwyu += " --iwyu=";
+    //      run_iwyu += this->GetLocalGenerator()->EscapeForShell(*iwyu);
+    //    }
+    //    if (tidy) {
+    //      run_iwyu += " --tidy=";
+    //      run_iwyu += this->GetLocalGenerator()->EscapeForShell(*tidy);
+    //    }
+    //    if (cpplint) {
+    //      run_iwyu += " --cpplint=";
+    //      run_iwyu += this->GetLocalGenerator()->EscapeForShell(*cpplint);
+    //    }
+    //    if (cppcheck) {
+    //      run_iwyu += " --cppcheck=";
+    //      run_iwyu += this->GetLocalGenerator()->EscapeForShell(*cppcheck);
+    //    }
+    //    if (tidy || cpplint || cppcheck) {
+    //      run_iwyu += " --source=" FASTBUILD_DOLLAR_TAG
+    //                  "FB_INPUT_1_PLACEHOLDER" FASTBUILD_DOLLAR_TAG;
+    //    }
+    //    run_iwyu += " -- ";
+    //    compileCmds.front().insert(0, run_iwyu);
+    //  }
+    //}
 
     // If compiler launcher was specified and not consumed above, it
     // goes to the beginning of the command line.
@@ -910,7 +912,11 @@ cmFastbuildNormalTargetGenerator::GenerateObjects()
 
         objectListNode.Name = ruleName;
         objectListNode.Compiler = "." + compilerId;
-        objectListNode.CompilerOptions = command.flags;
+        std::string tmpFlags(command.flags);
+        std::cout << "tmpFlags1" <<  tmpFlags << std::endl;
+        cmSystemTools::ReplaceString(tmpFlags, "\"", "\\\"");
+        std::cout << "tmpFlags2" <<  tmpFlags << std::endl;
+        objectListNode.CompilerOptions = tmpFlags;
         objectListNode.CompilerInputFiles =
           GetGlobalGenerator()->ConvertToFastbuildPath(
             commandObjects.sourceFiles);
@@ -946,6 +952,7 @@ cmFastbuildNormalTargetGenerator::GenerateObjects()
         }
 
         objectsByName[objectListNode.Name] = objectListNode;
+        std::cout << "objectListNode.Name:" << objectListNode.Name << std::endl;
       }
     }
 
@@ -972,8 +979,10 @@ cmFastbuildNormalTargetGenerator::GenerateObjects()
     }
   }
   for (auto& [name, object] : objectsByName) {
+    std::cout << "===345" <<  "name:" << name << std::endl;
     for (auto it = object.ObjectDependencies.begin();
          it != object.ObjectDependencies.end();) {
+      std::cout << "dependce-it" << *it <<  "name:" << name << std::endl;
       if (auto dependency = objectOutputs.find(*it);
           dependency != objectOutputs.end()) {
         object.PreBuildDependencies.insert(dependency->second);

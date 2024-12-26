@@ -15,6 +15,8 @@
 #include <algorithm>
 #include <future>
 #include <filesystem>
+#include <cassert>
+#include <iostream>
 
 #ifdef _WIN32
 #  include <windows.h>
@@ -164,10 +166,8 @@ void cmGlobalFastbuildGenerator::AppendDirectoryForConfig(
   const std::string& prefix, const std::string& config,
   const std::string& suffix, std::string& dir)
 {
-  if (!config.empty()) {
-    dir += prefix;
-    dir += config;
-    dir += suffix;
+  if (!config.empty() && this->IsMultiConfig()) {
+    dir += cmStrCat(prefix, config, suffix);
   }
 }
 
@@ -461,6 +461,19 @@ void cmGlobalFastbuildGenerator::AddTarget(const FastbuildTarget& target)
     cmSystemTools::Error("Duplicated target " + target.Name);
   }
   FastbuildTargets[target.Name] = target;
+  std::cout << "Target:" << target.Name << std::endl;
+}
+
+cmGlobalFastbuildGenerator::FastbuildTarget&
+cmGlobalFastbuildGenerator::FindTarget(const std::string& name)
+{
+  static FastbuildTarget nullTarget;
+  nullTarget.Name = "";
+  const auto& it = FastbuildTargets.find(name);
+  if (it != FastbuildTargets.end()) {
+      return it->second;
+  }
+  return nullTarget;
 }
 
 void cmGlobalFastbuildGenerator::WriteCompilers(std::ostream& os)
@@ -852,8 +865,13 @@ std::set<std::string> cmGlobalFastbuildGenerator::WriteLinker(
         WriteVariable(*BuildFileStream, "LibrarianType",
                       Quote(LinkerNode.LinkerType), 2);
         WriteVariable(*BuildFileStream, "Compiler", LinkerNode.Compiler, 2);
-        WriteVariable(*BuildFileStream, "CompilerOptions",
-                      Quote(LinkerNode.CompilerOptions), 2);
+        if (LinkerNode.CompilerOptions != "") {
+            WriteVariable(*BuildFileStream, "CompilerOptions",
+                    Quote(LinkerNode.CompilerOptions), 2);
+        } else {
+            WriteVariable(*BuildFileStream, "CompilerOptions",
+                    Quote(" "), 2);
+        }
         WriteVariable(*BuildFileStream, "CompilerOutputPath", "'/dummy/'", 2);
       }
       Indent(*BuildFileStream, 1);
@@ -965,6 +983,7 @@ void cmGlobalFastbuildGenerator::WriteTargets(std::ostream& os)
         ((cmLocalCommonGenerator*)this->LocalGenerators[0].get())
           ->GetConfigNames()
           .front();
+      assert (VCXProject.Config != "" && "configure type must select")
       VCXProject.Target = "all";
       VCXProject.Folder = "CMakePredefinedTargets";
 
@@ -1357,9 +1376,12 @@ void cmGlobalFastbuildGenerator::WriteTargets(std::ostream& os)
         continue;
 
       std::string folderId = folder;
+      cmSystemTools::ReplaceString(folderId, ":", "_");
       cmSystemTools::ReplaceString(folderId, " ", "_");
       cmSystemTools::ReplaceString(folderId, "/", "_");
       cmSystemTools::ReplaceString(folderId, "\\", "_");
+      cmSystemTools::ReplaceString(folderId, "..", "_");
+      cmSystemTools::ReplaceString(folderId, ".", "_");
       cmSystemTools::ReplaceString(folderId, "+", "_");
       cmSystemTools::ReplaceString(folderId, "-", "_");
 

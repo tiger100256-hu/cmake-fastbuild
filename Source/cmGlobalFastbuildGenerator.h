@@ -321,7 +321,7 @@ public:
   std::string GetTargetName(const cmGeneratorTarget* GeneratorTarget) const;
 
   void AddTarget(const FastbuildTarget& target);
-
+  FastbuildTarget& FindTarget(const std::string& name);
   bool IsExcluded(cmGeneratorTarget* target);
 
   std::set<std::string> WriteExecs(const std::vector<FastbuildExecNode>&,

@@ -12,6 +12,7 @@
 #include "cmOSXBundleGenerator.h"
 #include "cmRulePlaceholderExpander.h"
 #include "cmSourceFile.h"
+#include <iostream>
 
 #define FASTBUILD_DOLLAR_TAG "FASTBUILD_DOLLAR_TAG"
 
@@ -267,6 +268,19 @@ cmFastbuildTargetGenerator::GenerateCommands(const std::string& buildStep)
   for (const cmCustomCommand& cc : commands) {
     // We need to generate the command for execution.
     cmCustomCommandGenerator ccg(cc, configName, LocalCommonGenerator);
+    for(int i=0; i != ccg.GetNumberOfCommands(); ++i) {
+        std::cout << "configname:" << configName << "== customcomannd:" << ccg.GetCommand(i) << std::endl;
+    }
+    auto depends_all = ccg.GetDepends();
+    for(int i = 0; i < ccg.GetNumberOfCommands(); ++i) {
+        auto tmpStr = ccg.GetCommand(i);
+        const std::string protoc =  "protoc";
+        if(tmpStr.find(protoc) !=  std::string::npos &&
+                std::find(depends_all.begin(), depends_all.end(), protoc) == depends_all.end()) {
+            std::cout << "try to add dep protoc" << std::endl;
+            depends_all.push_back(protoc);
+        }
+    }
 
     std::string targetName;
     if (!buildStep.empty()) {
@@ -280,15 +294,18 @@ cmFastbuildTargetGenerator::GenerateCommands(const std::string& buildStep)
     std::vector<std::string> inputTargets;
     std::vector<std::string> inputFiles;
     // Take the dependencies listed and split into targets and files.
-    for (const std::string& dep : ccg.GetDepends()) {
+    for (const std::string& dep : depends_all) {
+      std::cout << "dep:" << dep <<  std::endl;
       if (GlobalCommonGenerator->FindTarget(dep)) {
         // Keep as target name for now, we'll need to search for a target later
+        std::cout << "add dep " << dep << std::endl;
         inputTargets.push_back(dep);
       } else {
         // Try to convert file name to full path
         std::string realDep;
         GetLocalGenerator()->GetRealDependency(dep, this->GetConfigName(),
                                                realDep);
+        std::cout << "add dep file " << realDep << std::endl;
         inputFiles.push_back(realDep);
       }
     }
@@ -345,6 +362,7 @@ cmFastbuildTargetGenerator::GenerateCommands(const std::string& buildStep)
     }
 
     for (unsigned i = 0; i != ccg.GetNumberOfCommands(); ++i) {
+      std::cout << "$$$==============" << launcher << "====" << ccg.GetCommand(i) << std::endl;
       cmdLines.push_back(launcher +
                          this->LocalGenerator->ConvertToOutputFormat(
                            ccg.GetCommand(i), cmOutputConverter::SHELL));

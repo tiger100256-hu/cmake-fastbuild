@@ -7,6 +7,7 @@
 #endif
 
 #include "kwsysPrivate.h"
+#include <algorithm>
 #include KWSYS_HEADER(Encoding.hxx)
 #include KWSYS_HEADER(Encoding.h)
 

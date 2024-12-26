@@ -52,6 +52,7 @@
 #include "cmValue.h"
 #include "cmVersion.h"
 #include "cmake.h"
+#include <iostream>
 
 #if !defined(CMAKE_BOOTSTRAP)
 #  define CM_LG_ENCODE_OBJECT_NAMES
@@ -4324,6 +4325,9 @@ cmSourcesWithOutput cmLocalGenerator::GetSourcesWithOutput(
   const std::string& name) const
 {
   // Linear search?  Also see GetSourceFileWithOutput for detail.
+  for (auto& key : OutputToSource) {
+    std::cout << "output key:" << key.first << std::endl;
+  }
   if (!cmSystemTools::FileIsFullPath(name)) {
     cmSourcesWithOutput sources;
     sources.Target = this->LinearGetTargetWithOutput(name);
