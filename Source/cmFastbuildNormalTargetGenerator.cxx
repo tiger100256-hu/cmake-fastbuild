@@ -125,16 +125,44 @@ void cmFastbuildNormalTargetGenerator::DetectCompilerFlags(
 }
 
 void cmFastbuildNormalTargetGenerator::DetectOutput(
-  FastbuildTargetNames& targetNamesOut, const std::string& configName)
+  cmGlobalFastbuildGenerator::FastbuildTargetNames& targetNamesOut,
+  const std::string& configName)
 {
   if (GeneratorTarget->HaveWellDefinedOutputFiles()) {
+    bool isbin = false;
+    cmGeneratorTarget::Names targetNames;
+    if (GeneratorTarget->GetType() == cmStateEnums::EXECUTABLE) {
+        targetNames = GeneratorTarget->GetExecutableNames(configName);
+        isbin = true;
+        std::cout << "output bin real:" << targetNames.Real << std::endl;
+    } else if (GeneratorTarget->GetType() == cmStateEnums::STATIC_LIBRARY ||
+            GeneratorTarget->GetType() == cmStateEnums::SHARED_LIBRARY ||
+            GeneratorTarget->GetType() == cmStateEnums::MODULE_LIBRARY) {
+        targetNames = GeneratorTarget->GetLibraryNames(configName);
+        std::cout << "output library real:" << targetNames.Real << std::endl;
+        targetNamesOut.targetNameSO = targetNames.SharedObject;
+        std::cout << "recode output library SharedObject:" << targetNames.SharedObject << std::endl;
+        isbin = true;
+    }
+
     targetNamesOut.targetOutputDir =
       GeneratorTarget->GetDirectory(configName) + "/";
+    std::cout << "recode output dir:" << targetNamesOut.targetOutputDir << std::endl;
+    if (isbin) {
+        targetNamesOut.targetNameOut = targetNames.Output;
+        targetNamesOut.targetNameReal = targetNames.Real;
+        std::cout << "recode output bin name:" << targetNamesOut.targetNameOut << std::endl;
+        std::cout << "recode output bin RealName:" << targetNamesOut.targetNameReal << std::endl;
+    }
+    targetNamesOut.targetOutput = isbin ? targetNamesOut.targetOutputDir + targetNames.Output
+                                        : GeneratorTarget->GetFullPath(configName);
+    std::cout << "HaveWellDefinedOutputFiles output:" << targetNamesOut.targetOutput << std::endl;
+    targetNamesOut.targetOutputReal = isbin ? targetNamesOut.targetOutputDir + targetNames.Real
+                                            : GeneratorTarget->GetFullPath(configName,
+                                                                           cmStateEnums::RuntimeBinaryArtifact,
+                                                                           /*realpath=*/true);
 
-    targetNamesOut.targetOutput = GeneratorTarget->GetFullPath(configName);
-    targetNamesOut.targetOutputReal = GeneratorTarget->GetFullPath(
-      configName, cmStateEnums::RuntimeBinaryArtifact,
-      /*realpath=*/true);
+    std::cout << "HaveWellDefinedOutputFiles OutputReal:" << targetNamesOut.targetOutputReal << std::endl;
     targetNamesOut.targetOutputImplib = GeneratorTarget->GetFullPath(
       configName, cmStateEnums::ImportLibraryArtifact);
   } else {
@@ -1053,7 +1081,7 @@ cmFastbuildNormalTargetGenerator::GenerateLink(
 
   const std::string& configName = this->GetConfigName();
 
-  FastbuildTargetNames targetNames;
+  cmGlobalFastbuildGenerator::FastbuildTargetNames targetNames;
   DetectOutput(targetNames, configName);
 
   auto targetOutput = ConvertToFastbuildPath(targetNames.targetOutput);
@@ -1134,11 +1162,12 @@ cmFastbuildNormalTargetGenerator::GenerateLink(
   linkerNode.Name = targetName;
   linkerNode.Linker = executable;
   linkerNode.LinkerType = linkerType;
-  linkerNode.LinkerOutput = targetOutput;
+  linkerNode.LinkerOutput = targetOutputReal;
   linkerNode.LinkerOptions = linkerOptions;
   linkerNode.Libraries = dependencies;
   for (const auto& objectList : objectLists)
     linkerNode.Libraries.push_back(objectList.Name);
+  linkerNode.TargetNameInfo = targetNames;
 
   return { linkerNode };
 }
@@ -1203,6 +1232,21 @@ void cmFastbuildNormalTargetGenerator::Generate()
   fastbuildTarget.ExecNodes = GenerateCommands();
   fastbuildTarget.ObjectListNodes = GenerateObjects();
   fastbuildTarget.LinkerNodes = GenerateLink(fastbuildTarget.ObjectListNodes);
+  // need create link for bin on linux if define SOVERSION or VERSION
+  for (auto& linkNode : fastbuildTarget.LinkerNodes) {
+      auto& TargetNameInfo = linkNode.TargetNameInfo;
+      if (linkNode.Type = cmGlobalFastbuildGenerator::FastbuildLinkerNode::EXECUTABLE) {
+        if (TargetNameInfo.targetNameOut != TargetNameInfo.targetNameReal) {
+            fastbuildTarget.PostBuildExecNodes.push_back(GenerateLNCommands(linkNode));
+        }
+      } else if(linkNode.Type = cmGlobalFastbuildGenerator::FastbuildLinkerNode::SHARED_LIBRARY) {
+        if ((TargetNameInfo.targetNameOut != TargetNameInfo.targetNameReal) ||
+            (TargetNameInfo.targetNameSO != TargetNameInfo.targetNameReal &&
+             (!TargetNameInfo.targetNameSO.empty()))) {
+            fastbuildTarget.PostBuildExecNodes.push_back(GenerateLNCommands(linkNode));
+        }
+      }
+  }
 
 #ifdef _WIN32
   std::string targetName = GeneratorTarget->GetName();

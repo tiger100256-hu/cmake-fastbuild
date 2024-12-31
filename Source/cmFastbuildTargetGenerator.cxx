@@ -13,6 +13,7 @@
 #include "cmRulePlaceholderExpander.h"
 #include "cmSourceFile.h"
 #include <iostream>
+#include <atomic>
 
 #define FASTBUILD_DOLLAR_TAG "FASTBUILD_DOLLAR_TAG"
 
@@ -545,6 +546,60 @@ cmFastbuildTargetGenerator::GenerateCommands(const std::string& buildStep)
   }
 
   return nodes;
+}
+cmGlobalFastbuildGenerator::FastbuildExecNode
+cmFastbuildTargetGenerator::GenerateLNCommands(cmGlobalFastbuildGenerator::FastbuildLinkerNode& linkNode)
+{
+    static std::atomic_int num = 0;
+    auto& targetName = linkNode.TargetNameInfo;
+    std::cout << "GenerateLNCommands bin:"<< targetName.targetNameOut << std::endl;
+    std::cout << "GenerateLNCommands lib:"<< targetName.targetNameSO << std::endl;
+    std::cout << "GenerateLNCommands realbin:"<< targetName.targetNameReal << std::endl;
+    cmGlobalFastbuildGenerator::FastbuildExecNode execNode;
+    execNode.Name = "LN_" + std::to_string(num) + "_" + targetName.targetNameOut;
+    execNode.IsNoop = false;
+    execNode.ExecAlways = true;
+    execNode.ExecUseStdOutAsOutput = true;
+    const std::string successFlagFile = targetName.targetOutput + "_ln_flag_ss";
+    execNode.ExecOutput = successFlagFile;
+    std::string scriptFileName = Makefile->GetCurrentBinaryDirectory();
+    scriptFileName += "/CMakeFiles";
+    scriptFileName += "/";
+    scriptFileName += execNode.Name;
+    scriptFileName += ".sh";
+
+    cmsys::ofstream scriptFile(scriptFileName.c_str());
+    scriptFile << "set -e\n\n";
+    scriptFile << "cd " << targetName.targetOutputDir << "\n";
+    if (!targetName.targetNameSO.empty()) {
+        if (targetName.targetNameSO != targetName.targetNameReal) {
+            scriptFile << "if [ -e " << targetName.targetNameSO << " ]; then" << "\n" ;
+            scriptFile << "unlink " << targetName.targetNameSO << "\n" ;
+            scriptFile << "fi " << "\n" ;
+            scriptFile << "ln -s " << targetName.targetNameReal << " " << targetName.targetNameSO << "\n" ;
+            scriptFile << "if [ -e " << targetName.targetNameOut << " ]; then" << "\n" ;
+            scriptFile << "unlink " << targetName.targetNameOut << "\n" ;
+            scriptFile << "fi " << "\n" ;
+            scriptFile << "ln -s " << targetName.targetNameSO << " " << targetName.targetNameOut << "\n" ;
+            scriptFile << "touch " << successFlagFile << "\n" ;
+        }
+    } else {
+        if (targetName.targetNameOut != targetName.targetNameReal) {
+            scriptFile << "if [ -e " << targetName.targetNameOut << " ]; then" << "\n" ;
+            scriptFile << "unlink " << targetName.targetNameOut << "\n" ;
+            scriptFile << "fi " << "\n" ;
+            scriptFile << "ln -s " << targetName.targetNameReal << " " << targetName.targetNameOut << "\n" ;
+            scriptFile << "touch " << successFlagFile << "\n" ;
+        }
+    }
+
+
+    execNode.ExecExecutable = cmSystemTools::FindProgram("sh");
+    execNode.ExecArguments = scriptFileName;
+    execNode.ExecWorkingDir = targetName.targetOutputDir;
+    //execNode.ExecInput.push_back(targetName.targetOutputReal);
+    execNode.PreBuildDependencies.insert(linkNode.Name);
+    return execNode;
 }
 
 std::string cmFastbuildTargetGenerator::GetTargetName() const

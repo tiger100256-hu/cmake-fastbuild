@@ -264,6 +264,22 @@ public:
     std::string ProjectRebuildCommand;
   };
 
+  struct FastbuildTargetNames
+  {
+    std::string targetNameOut;
+    std::string targetNameReal;
+    std::string targetNameImport;
+    std::string targetNamePDB;
+    std::string targetNameSO;
+
+    std::string targetOutput;
+    std::string targetOutputReal;
+    std::string targetOutputImplib;
+    std::string targetOutputDir;
+    std::string targetOutputPDBDir;
+    std::string targetOutputCompilePDBDir;
+  };
+
   struct FastbuildLinkerNode
   {
     enum
@@ -281,6 +297,7 @@ public:
     std::string LinkerOutput;
     std::string LinkerOptions;
     std::vector<std::string> Libraries;
+    FastbuildTargetNames TargetNameInfo;
   };
 
   struct FastbuildExecNode

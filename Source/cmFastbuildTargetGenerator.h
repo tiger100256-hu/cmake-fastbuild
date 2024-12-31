@@ -63,6 +63,9 @@ protected:
   std::vector<cmGlobalFastbuildGenerator::FastbuildExecNode> GenerateCommands(
     const std::string& buildStep = "");
 
+  cmGlobalFastbuildGenerator::FastbuildExecNode
+  GenerateLNCommands(cmGlobalFastbuildGenerator::FastbuildLinkerNode& linkNode);
+
   std::string GetCustomCommandTargetName(const cmCustomCommand& cc,
                                          const std::string& extra = "") const;
 

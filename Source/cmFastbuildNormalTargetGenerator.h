@@ -27,27 +27,27 @@ private:
     const std::vector<cmGlobalFastbuildGenerator::FastbuildObjectListNode>&
       objectLists);
 
-  struct FastbuildTargetNames
-  {
-    std::string targetNameOut;
-    std::string targetNameReal;
-    std::string targetNameImport;
-    std::string targetNamePDB;
-    std::string targetNameSO;
+  //struct FastbuildTargetNames
+  //{
+  //  std::string targetNameOut;
+  //  std::string targetNameReal;
+  //  std::string targetNameImport;
+  //  std::string targetNamePDB;
+  //  std::string targetNameSO;
 
-    std::string targetOutput;
-    std::string targetOutputReal;
-    std::string targetOutputImplib;
-    std::string targetOutputDir;
-    std::string targetOutputPDBDir;
-    std::string targetOutputCompilePDBDir;
-  };
+  //  std::string targetOutput;
+  //  std::string targetOutputReal;
+  //  std::string targetOutputImplib;
+  //  std::string targetOutputDir;
+  //  std::string targetOutputPDBDir;
+  //  std::string targetOutputCompilePDBDir;
+  //};
 
   void DetectCompilerFlags(std::string& compileFlags,
                            const cmSourceFile* source,
                            const std::string& language);
 
-  void DetectOutput(FastbuildTargetNames& targetNamesOut,
+  void DetectOutput(cmGlobalFastbuildGenerator::FastbuildTargetNames& targetNamesOut,
                     const std::string& configName);
 
   void DetectLinkerLibPaths(std::string& linkerLibPath,
