@@ -639,7 +639,7 @@ std::string cmFastbuildNormalTargetGenerator::GetManifestsAsFastbuildPath()
 {
   std::vector<cmSourceFile const*> manifest_srcs;
   this->GeneratorTarget->GetManifests(manifest_srcs, this->GetConfigName());
-
+  std::cout << "==manifest_srcs.size()" << manifest_srcs.size() << " config" << this->GetConfigName() << std::endl;
   std::vector<std::string> manifests;
   for (std::vector<cmSourceFile const*>::iterator mi = manifest_srcs.begin();
        mi != manifest_srcs.end(); ++mi) {
@@ -722,7 +722,8 @@ cmFastbuildNormalTargetGenerator::GenerateObjects()
     compileObjectVars.Flags = "";
     compileObjectVars.Includes = "";
     const std::string manifests = this->GetManifestsAsFastbuildPath();
-    compileObjectVars.Manifests = manifests.c_str();
+    if (!manifests.empty())
+      compileObjectVars.Manifests = manifests.c_str();
     compileObjectVars.Defines = "";
     compileObjectVars.Includes = "";
     compileObjectVars.TargetCompilePDB =
@@ -942,7 +943,10 @@ cmFastbuildNormalTargetGenerator::GenerateObjects()
         objectListNode.Compiler = "." + compilerId;
         std::string tmpFlags(command.flags);
         std::cout << "tmpFlags1" <<  tmpFlags << std::endl;
+	// fix defined version in compiler command
+#ifdef __linux__
         cmSystemTools::ReplaceString(tmpFlags, "\"", "\\\"");
+#endif
         std::cout << "tmpFlags2" <<  tmpFlags << std::endl;
         objectListNode.CompilerOptions = tmpFlags;
         objectListNode.CompilerInputFiles =
@@ -1175,7 +1179,13 @@ cmFastbuildNormalTargetGenerator::GenerateLink(
 void cmFastbuildNormalTargetGenerator::Generate()
 {
   // This time to define linker settings for each config
-  const std::string& configName = this->GetConfigName();
+  std::string& configName = this->GetConfigName();
+  if (configName.empty()) {
+      configName = Makefile->GetDefinition("CMAKE_BUILD_TYPE");
+  }
+  if (configName.empty()) {
+      std::cout << "========warning=========config empty" << std::endl;
+  }
 
   cmGlobalFastbuildGenerator::FastbuildTarget fastbuildTarget;
   fastbuildTarget.Name = GeneratorTarget->GetName();
@@ -1250,7 +1260,7 @@ void cmFastbuildNormalTargetGenerator::Generate()
 
 #ifdef _WIN32
   std::string targetName = GeneratorTarget->GetName();
-  FastbuildTargetNames targetNames;
+  cmGlobalFastbuildGenerator::FastbuildTargetNames targetNames;
   DetectOutput(targetNames, configName);
 
   std::string targetCompileOutDirectory =

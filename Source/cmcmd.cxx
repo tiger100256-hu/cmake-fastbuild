@@ -26,6 +26,7 @@
 #include "cmValue.h"
 #include "cmVersion.h"
 #include "cmake.h"
+#include <iostream>
 
 #if !defined(CMAKE_BOOTSTRAP)
 #  include "cmDependsFortran.h" // For -E cmake_copy_f90_mod callback.
@@ -2246,6 +2247,7 @@ bool cmVSLink::Parse(std::vector<std::string>::const_iterator argBeg,
     return false;
   }
 
+  cmSystemTools::ReplaceString(this->TargetFile, "\"", "");
   this->ManifestFile = intDir + "/embed.manifest";
   this->LinkerManifestFile = intDir + "/intermediate.manifest";
 

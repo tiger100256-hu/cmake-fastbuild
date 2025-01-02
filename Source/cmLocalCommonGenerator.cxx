@@ -21,8 +21,10 @@ cmLocalCommonGenerator::cmLocalCommonGenerator(cmGlobalGenerator* gg,
   : cmLocalGenerator(gg, mf)
   , WorkingDirectory(wd)
 {
-  this->ConfigNames =
-    this->Makefile->GetGeneratorConfigs(cmMakefile::IncludeEmptyConfig);
+  this->ConfigNames = this->Makefile->GetGeneratorConfigs(cmMakefile::IncludeEmptyConfig);
+  if (this->ConfigNames.size() == 0) {
+      this->ConfigNames.push_back("Release");
+  }
 }
 
 cmLocalCommonGenerator::~cmLocalCommonGenerator() = default;

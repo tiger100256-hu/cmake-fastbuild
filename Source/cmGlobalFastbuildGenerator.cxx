@@ -979,11 +979,16 @@ void cmGlobalFastbuildGenerator::WriteTargets(std::ostream& os)
       VCXProject.ProjectOutput = ConvertToFastbuildPath(
         targetCompileOutDirectory + "/" + targetName + ".vcxproj");
       VCXProject.Platform = "X64";
-      VCXProject.Config =
-        ((cmLocalCommonGenerator*)this->LocalGenerators[0].get())
-          ->GetConfigNames()
-          .front();
-      assert (VCXProject.Config != "" && "configure type must select")
+      std::string configName = ((cmLocalCommonGenerator*)this->LocalGenerators[0].get())->GetConfigNames() .front();
+      if (configName.empty()) {
+          configName =((cmLocalCommonGenerator*)this->LocalGenerators[0].get())->GetMakefile()->GetDefinition("CMAKE_BUILD_TYPE");
+      }
+      if (configName.empty()) {
+          std::cout << "========warning=========config empty, add Config Release" << std::endl;
+	  configName = "Release";
+      }
+
+      VCXProject.Config = configName;
       VCXProject.Target = "all";
       VCXProject.Folder = "CMakePredefinedTargets";
 
