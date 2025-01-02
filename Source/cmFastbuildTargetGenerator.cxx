@@ -269,14 +269,13 @@ cmFastbuildTargetGenerator::GenerateCommands(const std::string& buildStep)
   for (const cmCustomCommand& cc : commands) {
     // We need to generate the command for execution.
     cmCustomCommandGenerator ccg(cc, configName, LocalCommonGenerator);
+
+    // maybe also denpend other ExecTarget
     auto depends_all = ccg.GetDepends();
-    // workaround, need more debuging
-    for(int i = 0; i < ccg.GetNumberOfCommands(); ++i) {
-        auto tmpStr = ccg.GetCommand(i);
-        const std::string protoc =  "protoc";
-        if (tmpStr.find(protoc) !=  std::string::npos &&
-                std::find(depends_all.begin(), depends_all.end(), protoc) == depends_all.end()) {
-            depends_all.push_back(protoc);
+    auto& utilties = ccg.GetUtilities();
+    if (utilties.size() > 0) {
+        for (auto& item : utilties) {
+            depends_all.push_back(item.Value.first);
         }
     }
 
