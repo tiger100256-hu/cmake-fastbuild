@@ -461,7 +461,6 @@ void cmGlobalFastbuildGenerator::AddTarget(const FastbuildTarget& target)
     cmSystemTools::Error("Duplicated target " + target.Name);
   }
   FastbuildTargets[target.Name] = target;
-  std::cout << "Target:" << target.Name << std::endl;
 }
 
 cmGlobalFastbuildGenerator::FastbuildTarget&
@@ -984,8 +983,8 @@ void cmGlobalFastbuildGenerator::WriteTargets(std::ostream& os)
           configName =((cmLocalCommonGenerator*)this->LocalGenerators[0].get())->GetMakefile()->GetDefinition("CMAKE_BUILD_TYPE");
       }
       if (configName.empty()) {
-          std::cout << "========warning=========config empty, add Config Release" << std::endl;
-	  configName = "Release";
+          std::cout << "========warning=========config empty" << std::endl;
+          configName = "Release";
       }
 
       VCXProject.Config = configName;

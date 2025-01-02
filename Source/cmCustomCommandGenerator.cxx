@@ -24,7 +24,6 @@
 #include "cmSystemTools.h"
 #include "cmTransformDepfile.h"
 #include "cmValue.h"
-#include <iostream>
 
 namespace {
 std::string EvaluateSplitConfigGenex(
@@ -181,11 +180,6 @@ cmCustomCommandGenerator::cmCustomCommandGenerator(
 
   const cmCustomCommandLines& cmdlines = this->CC->GetCommandLines();
   for (cmCustomCommandLine const& cmdline : cmdlines) {
-    std::cout << "111111== customcomanndLine:";
-    for(int i = 0; i != cmdline.size(); ++i) {
-        std::cout << cmdline[i];
-    }
-    std::cout << std::endl;
     cmCustomCommandLine argv;
     // For the command itself, we default to the COMMAND_CONFIG.
     bool useOutputConfig = false;
@@ -193,8 +187,6 @@ cmCustomCommandGenerator::cmCustomCommandGenerator(
       std::string parsed_arg = EvaluateSplitConfigGenex(
         clarg, ge, this->LG, useOutputConfig, this->OutputConfig,
         this->CommandConfig, target, &this->Utilities);
-
-      std::cout << "111111== parsed_arg:" << parsed_arg << std::endl;
       if (this->CC->GetCommandExpandLists()) {
         cm::append(argv, cmExpandedList(parsed_arg));
       } else {
@@ -210,11 +202,9 @@ cmCustomCommandGenerator::cmCustomCommandGenerator(
     if (!argv.empty()) {
       // If the command references an executable target by name,
       // collect the target to add a target-level dependency on it.
-      std::cout << "221111== parsed_arg:" << argv.front() << std::endl;
       cmGeneratorTarget* gt = this->LG->FindGeneratorTargetToUse(argv.front());
       if (gt && gt->GetType() == cmStateEnums::EXECUTABLE) {
         // GetArgv0Location uses the command config, so use a cross-dependency.
-        std::cout << "333333== parsed_arg:" << argv.front() << std::endl;
         bool const cross = true;
         this->Utilities.emplace(BT<std::pair<std::string, bool>>(
           { gt->GetName(), cross }, cc.GetBacktrace()));

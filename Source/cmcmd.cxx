@@ -26,7 +26,6 @@
 #include "cmValue.h"
 #include "cmVersion.h"
 #include "cmake.h"
-#include <iostream>
 
 #if !defined(CMAKE_BOOTSTRAP)
 #  include "cmDependsFortran.h" // For -E cmake_copy_f90_mod callback.

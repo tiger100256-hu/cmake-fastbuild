@@ -19,7 +19,6 @@
 #include "cmSourceFile.h"
 #include "cmStateDirectory.h"
 #include "cmSystemTools.h"
-#include <iostream>
 
 #ifdef _WIN32
 #  include "windows.h"
@@ -97,7 +96,6 @@ void cmLocalFastbuildGenerator::ComputeObjectFilenames(
   std::map<cmSourceFile const*, std::string>& mapping,
   cmGeneratorTarget const* gt)
 {
-  std::cout << "mapping.size()" << mapping.size() << std::endl;
   for (auto& si : mapping) {
     cmSourceFile const* sf = si.first;
     si.second = this->GetObjectFileNameWithoutTarget(*sf, gt->ObjectDirectory);

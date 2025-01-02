@@ -134,35 +134,26 @@ void cmFastbuildNormalTargetGenerator::DetectOutput(
     if (GeneratorTarget->GetType() == cmStateEnums::EXECUTABLE) {
         targetNames = GeneratorTarget->GetExecutableNames(configName);
         isbin = true;
-        std::cout << "output bin real:" << targetNames.Real << std::endl;
     } else if (GeneratorTarget->GetType() == cmStateEnums::STATIC_LIBRARY ||
             GeneratorTarget->GetType() == cmStateEnums::SHARED_LIBRARY ||
             GeneratorTarget->GetType() == cmStateEnums::MODULE_LIBRARY) {
         targetNames = GeneratorTarget->GetLibraryNames(configName);
-        std::cout << "output library real:" << targetNames.Real << std::endl;
         targetNamesOut.targetNameSO = targetNames.SharedObject;
-        std::cout << "recode output library SharedObject:" << targetNames.SharedObject << std::endl;
         isbin = true;
     }
 
     targetNamesOut.targetOutputDir =
       GeneratorTarget->GetDirectory(configName) + "/";
-    std::cout << "recode output dir:" << targetNamesOut.targetOutputDir << std::endl;
     if (isbin) {
         targetNamesOut.targetNameOut = targetNames.Output;
         targetNamesOut.targetNameReal = targetNames.Real;
-        std::cout << "recode output bin name:" << targetNamesOut.targetNameOut << std::endl;
-        std::cout << "recode output bin RealName:" << targetNamesOut.targetNameReal << std::endl;
     }
     targetNamesOut.targetOutput = isbin ? targetNamesOut.targetOutputDir + targetNames.Output
                                         : GeneratorTarget->GetFullPath(configName);
-    std::cout << "HaveWellDefinedOutputFiles output:" << targetNamesOut.targetOutput << std::endl;
     targetNamesOut.targetOutputReal = isbin ? targetNamesOut.targetOutputDir + targetNames.Real
                                             : GeneratorTarget->GetFullPath(configName,
                                                                            cmStateEnums::RuntimeBinaryArtifact,
                                                                            /*realpath=*/true);
-
-    std::cout << "HaveWellDefinedOutputFiles OutputReal:" << targetNamesOut.targetOutputReal << std::endl;
     targetNamesOut.targetOutputImplib = GeneratorTarget->GetFullPath(
       configName, cmStateEnums::ImportLibraryArtifact);
   } else {
@@ -639,7 +630,6 @@ std::string cmFastbuildNormalTargetGenerator::GetManifestsAsFastbuildPath()
 {
   std::vector<cmSourceFile const*> manifest_srcs;
   this->GeneratorTarget->GetManifests(manifest_srcs, this->GetConfigName());
-  std::cout << "==manifest_srcs.size()" << manifest_srcs.size() << " config" << this->GetConfigName() << std::endl;
   std::vector<std::string> manifests;
   for (std::vector<cmSourceFile const*>::iterator mi = manifest_srcs.begin();
        mi != manifest_srcs.end(); ++mi) {
@@ -942,12 +932,10 @@ cmFastbuildNormalTargetGenerator::GenerateObjects()
         objectListNode.Name = ruleName;
         objectListNode.Compiler = "." + compilerId;
         std::string tmpFlags(command.flags);
-        std::cout << "tmpFlags1" <<  tmpFlags << std::endl;
-	// fix defined version in compiler command
+        // fix defined version in compiler command
 #ifdef __linux__
         cmSystemTools::ReplaceString(tmpFlags, "\"", "\\\"");
 #endif
-        std::cout << "tmpFlags2" <<  tmpFlags << std::endl;
         objectListNode.CompilerOptions = tmpFlags;
         objectListNode.CompilerInputFiles =
           GetGlobalGenerator()->ConvertToFastbuildPath(
@@ -984,7 +972,6 @@ cmFastbuildNormalTargetGenerator::GenerateObjects()
         }
 
         objectsByName[objectListNode.Name] = objectListNode;
-        std::cout << "objectListNode.Name:" << objectListNode.Name << std::endl;
       }
     }
 
@@ -1011,10 +998,8 @@ cmFastbuildNormalTargetGenerator::GenerateObjects()
     }
   }
   for (auto& [name, object] : objectsByName) {
-    std::cout << "===345" <<  "name:" << name << std::endl;
     for (auto it = object.ObjectDependencies.begin();
          it != object.ObjectDependencies.end();) {
-      std::cout << "dependce-it" << *it <<  "name:" << name << std::endl;
       if (auto dependency = objectOutputs.find(*it);
           dependency != objectOutputs.end()) {
         object.PreBuildDependencies.insert(dependency->second);
@@ -1179,12 +1164,13 @@ cmFastbuildNormalTargetGenerator::GenerateLink(
 void cmFastbuildNormalTargetGenerator::Generate()
 {
   // This time to define linker settings for each config
-  std::string& configName = this->GetConfigName();
+  std::string configName = this->GetConfigName();
   if (configName.empty()) {
       configName = Makefile->GetDefinition("CMAKE_BUILD_TYPE");
   }
   if (configName.empty()) {
       std::cout << "========warning=========config empty" << std::endl;
+      configName = "Release";
   }
 
   cmGlobalFastbuildGenerator::FastbuildTarget fastbuildTarget;
