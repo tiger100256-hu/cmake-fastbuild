@@ -932,11 +932,7 @@ cmFastbuildNormalTargetGenerator::GenerateObjects()
         objectListNode.Name = ruleName;
         objectListNode.Compiler = "." + compilerId;
         std::string tmpFlags(command.flags);
-        // fix defined version in compiler command
-#ifdef __linux__
-        cmSystemTools::ReplaceString(tmpFlags, "\"", "\\\"");
-#endif
-        objectListNode.CompilerOptions = tmpFlags;
+        objectListNode.CompilerOptions = command.flags;
         objectListNode.CompilerInputFiles =
           GetGlobalGenerator()->ConvertToFastbuildPath(
             commandObjects.sourceFiles);
