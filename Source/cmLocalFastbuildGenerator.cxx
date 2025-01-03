@@ -19,6 +19,7 @@
 #include "cmSourceFile.h"
 #include "cmStateDirectory.h"
 #include "cmSystemTools.h"
+#include <iostream>
 
 #ifdef _WIN32
 #  include "windows.h"

@@ -3268,12 +3268,28 @@ void cmLocalGenerator::JoinDefines(const std::set<std::string>& defines,
         }
         def += c;
       }
-    } else if (this->GetState()->UseFastbuildMake() &&
-               !this->Makefile->IsSet("MSVC")) {
-      // TODO needs more consideration
-      // on windows , fastbuild need to escape double quta (used by cmd?)
-      // on linux , fastbuild do not need to escape double quta (not use sh?)
-      def += define;
+    } else if (this->GetState()->UseFastbuildMake()) {
+        // TODO needs more consideration
+        // on windows , fastbuild need to escape double quta (used by cmd?)
+        // on linux , fastbuild do not need to escape double quta (not use sh?)
+        std::string tmpDefine = define;
+        std::string::size_type eq = tmpDefine.find('=');
+        if (eq != std::string::npos) {
+            def += tmpDefine.substr(0, eq);
+            def += "=";
+            tmpDefine = tmpDefine.substr(eq + 1);
+            if (tmpDefine.find(" ") != std::string::npos
+                    && tmpDefine.size() > 0
+                    && tmpDefine[0] != '"'
+                    && tmpDefine[0] != '\'') {
+                tmpDefine = "\"" + tmpDefine + "\"";
+            } else {
+                cmSystemTools::ReplaceString(tmpDefine, "\"", "\\\"");
+            }
+            def += tmpDefine;
+        } else {
+            def += tmpDefine;
+        }
     } else {
       // Make the definition appear properly on the command line.  Use
       // -DNAME="value" instead of -D"NAME=value" for historical reasons.
